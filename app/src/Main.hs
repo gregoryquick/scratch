@@ -1,15 +1,21 @@
 {-# LANGUAGE MultiWayIf #-}
 module Main where
 
+import Data.IORef
+
 main = do
-  print "Hello World"
+  -- globalState <- newIORef $ ProgramState 1.0
+  print $ eval circleMetric x (getTangent $ clockFlow x) 1.0
+  print $ myFunct x
+  where
+    x = Point 0.0 0 circle
 
 data Manifold a = Manifold [a -> [Int]] (Int -> Int -> Maybe (a -> Maybe a))
 data Point a = Point a Int (Manifold a)
 
 -- Example implentation will be a circle
-
 type OneManifold = Manifold Double
+type OnePoint = Point Double
 circle :: OneManifold
 circle = Manifold cIL transitionStuff
   where
@@ -26,4 +32,24 @@ circle = Manifold cIL transitionStuff
       | x == 0 = Nothing
       | otherwise = Just $ 1/x
 
--- Next I need to construct the tangent structure
+type OneTangent = Tangent Double
+type OneMetric = Metric Double
+
+clockFlow :: OnePoint -> OneTangent
+clockFlow point = Tangent 1.0 point
+
+circleMetric :: OneMetric
+circleMetric = Metric $ \_ -> \a -> \b -> a * b
+
+data Tangent a = Tangent a (Point a)
+getTangent :: Tangent a -> a
+getTangent (Tangent a x) = a
+
+data Metric a = Metric ((Point a) -> (a -> a -> Double))
+eval :: Metric a -> Point a -> a -> a -> Double
+eval (Metric f) x = \a -> \b -> f x a b
+
+-- Now a function on the circle
+myFunct :: OnePoint -> Double
+myFunct (Point x 0 circle) = acos((x^2-1)/(x^2+1))/pi
+myFunct (Point x 1 circle) = acos(-(x^2-1)/(x^2+1))/pi
