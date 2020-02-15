@@ -4,6 +4,7 @@ import Graphics.Rendering.Cairo
 import Control.Monad.Reader
 
 import Rendering
+import Structure
 
 makePixelList :: Generate [(Int,Int)]
 makePixelList = do
@@ -29,8 +30,8 @@ fillPixel (x,y) f = do
     rectangle (fromIntegral x) (fromIntegral y) 1 1
     fill
 
-sketch :: ((Double,Double) -> RGBAColor) -> Generate (Render ())
-sketch f = do
+sketch :: World -> (World -> (Double,Double) -> RGBAColor) -> Generate (Render ())
+sketch world f = do
   param <- ask
-  renderSequence <- sequence (fmap ($ f) (fmap fillPixel $ runReader makePixelList param))
+  renderSequence <- sequence (fmap ($ (f world)) (fmap fillPixel $ runReader makePixelList param))
   return $ foldr1 (>>) renderSequence
