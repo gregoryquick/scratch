@@ -1,9 +1,14 @@
 -- {-# LANGUAGE MultiWayIf #-}
 module Structure where
 
-data World = World Double
+data World = World Double Int
 getTheta :: World -> Double
-getTheta (World theta) = theta
+getTheta (World theta _) = theta
+getIteration :: World -> Int
+getIteration (World _ iteration) = iteration
+
+updateWorld :: World -> World
+updateWorld (World theta iteration) = World (theta + 0.05*2*pi) (iteration + 1)
 -- data Manifold a = Manifold [a -> [Int]] (Int -> Int -> Maybe (a -> Maybe a))
 -- data Point a = Point a Int (Manifold a)
 --

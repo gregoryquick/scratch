@@ -35,3 +35,9 @@ sketch world f = do
   param <- ask
   renderSequence <- sequence (fmap ($ (f world)) (fmap fillPixel $ runReader makePixelList param))
   return $ foldr1 (>>) renderSequence
+
+sketchWith :: Paramaters -> World -> IO ()
+sketchWith param world = do
+  surface <- createImageSurfaceFromParam param
+  renderWith surface $ runReader (sketch world inCircle) param
+  surfaceWriteToPNG surface $ (++) "/data/" $ show (getIteration world) ++ ".png"
