@@ -4,11 +4,11 @@ module Structure where
 data World = World Double Int
 getTheta :: World -> Double
 getTheta (World theta _) = theta
-getIteration :: World -> Int
-getIteration (World _ iteration) = iteration
+getTime :: World -> Int
+getTime (World _ time) = time
 
-updateWorld :: World -> World
-updateWorld (World theta iteration) = World (theta + 0.05*2*pi) (iteration + 1)
+getWorld :: Double -> World
+getWorld t = World ((1/20)*t*2*pi) (round t)
 -- data Manifold a = Manifold [a -> [Int]] (Int -> Int -> Maybe (a -> Maybe a))
 -- data Point a = Point a Int (Manifold a)
 --
