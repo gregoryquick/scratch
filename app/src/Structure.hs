@@ -1,57 +1,37 @@
 -- {-# LANGUAGE MultiWayIf #-}
 module Structure where
 
-data World = World Double Int
-getTheta :: World -> Double
-getTheta (World theta _) = theta
-getTime :: World -> Int
-getTime (World _ time) = time
+--Continous world structure
+data World = World Double Double
+getX :: World -> Double
+getX (World x _) = x
+getP :: World -> Double
+getP (World _ p) = p
 
+-- Quantized state version of the world
+data QWorld = QWorld Int Int
+getXq :: QWorld -> Int
+getXq (QWorld x _) = x
+getPq :: QWorld -> Int
+getPq (QWorld _ p) = p
+
+-- Quantization function
+scaleFactor :: Double
+scaleFactor = 1/100
+
+quantize :: World -> QWorld
+quantize world = QWorld (floor(scaleFactor*(getX(world)))) (floor(scaleFactor*(getP(world))))
+
+--Dequantization function as quantization is just for behind the scenes stuff
+inject :: QWorld -> World
+inject qworld = World (fromIntegral(getXq(qworld))) (fromIntegral(getPq(qworld)))
+
+--Function to get quantized version of world at a given time.
+getQWorld :: Double -> QWorld
+getQWorld = \x -> (quantize . getWorld) x
+
+--Function to get the world at a given time.
 getWorld :: Double -> World
-getWorld t = World ((1/20)*t*2*pi) (round t)
--- data Manifold a = Manifold [a -> [Int]] (Int -> Int -> Maybe (a -> Maybe a))
--- data Point a = Point a Int (Manifold a)
---
--- -- Example implentation will be a circle
--- type OneManifold = Manifold Double
--- type OnePoint = Point Double
--- circle :: OneManifold
--- circle = Manifold cIL transitionStuff
---   where
---     cIL = [\x -> if (x == 0) then [] else [1],\x -> if (x == 0) then [] else [0]]
---     transitionStuff x y =
---       if | x == y && x < length cIL  -> Just $ \a -> Just a
---          | x == 0 && y == 1          -> Just $ transition01
---          | x == 1 && y == 0          -> Just $ transition10
---          | otherwise                 -> Nothing
---     transition01 x
---       | x == 0 = Nothing
---       | otherwise = Just $ 1/x
---     transition10 x
---       | x == 0 = Nothing
---       | otherwise = Just $ 1/x
---
--- type OneTangent = Tangent Double
--- type OneMetric = Metric Double
---
--- clockFlow :: OnePoint -> OneTangent
--- clockFlow point = Tangent 1.0 point
---
--- circleMetric :: OneMetric
--- circleMetric = Metric $ \_ -> \a -> \b -> a * b
---
--- data Tangent a = Tangent a (Point a)
--- getTangent :: Tangent a -> a
--- getTangent (Tangent a x) = a
---
--- data Metric a = Metric ((Point a) -> (a -> a -> Double))
--- eval :: Metric a -> Point a -> a -> a -> Double
--- eval (Metric f) x = \a -> \b -> f x a b
---
--- -- Now a function on the circle
--- myFunct :: OnePoint -> Double
--- myFunct (Point x 0 circle) = acos((x^2-1)/(x^2+1))/pi
--- myFunct (Point x 1 circle) = acos(-(x^2-1)/(x^2+1))/pi
---
--- getAngle :: OnePoint -> Double
--- getAngle (Point x 0 circle) = atan((2*x)/(x^2-1))
+getWorld t = World ((1/2)*cos((1/20)*t*2*pi)) (0.0)
+
+--TODO Make it so that getWorld is deqantization of getQWorld instead of getQWorld being quantization of getWorld
