@@ -21,4 +21,5 @@ executable app
     base >= 4.7 && < 5,
     cairo,
     mtl,
-    netwire
+    netwire,
+    time
