@@ -17,7 +17,7 @@ param = Paramaters 1000 500
 
 main = do
   -- print $ take 205 (findWorldUpdateInfo startingWorld)
-  run clockSession_ test
+  run clockSession_ (test 0)
 
 myTime :: (HasTime t s, Monad m) => Wire s () m a Double
 myTime = integral 0 . pure 1
@@ -27,21 +27,24 @@ startingWorld = World (0.5) (0.0)
 printList :: [(Double, IO ())]
 printList = fmap (\x -> (fst x,print (snd x))) $ findWorldUpdateInfo startingWorld
 
-eventStream :: (HasTime t s, Monad m, Fractional t) => Wire s () m a (Event (IO ()))
-eventStream = loop $ fmap (\x -> (convert (fst x), snd x)) $ printList
+-- eventStream :: (HasTime t s, Monad m, Fractional t) => Wire s () m a (Event (IO ()))
+-- eventStream = loop $ fmap (\x -> (convert (fst x), snd x)) $ printList
+--   where
+--      loop :: (HasTime t s, Monad m) => [(t, IO ())] -> Wire s () m a (Event (IO ()))
+--      loop x = createOutput (head x) <& loop (tail x)
+--      createOutput :: (HasTime t s, Monad m) => (t, IO ()) -> Wire s () m a (Event (IO ()))
+--      createOutput x = at (fst x) . pure (snd x)
+--      convert = fromRational . toRational
+
+test :: (HasTime t s, Monad m, Fractional t) => Int -> Wire s () m a (Event (IO ()))
+test i = createOutput $ (fmap (\x -> (convert (fst x), snd x)) $ printList) !! i
   where
-     loop :: (HasTime t s, Monad m) => [(t, IO ())] -> Wire s () m a (Event (IO ()))
-     loop x = createOutput (head x) <& loop (tail x)
      createOutput :: (HasTime t s, Monad m) => (t, IO ()) -> Wire s () m a (Event (IO ()))
      createOutput x = at (fst x) . pure (snd x)
      convert = fromRational . toRational
 
-test :: (HasTime t s, Monad m, Fractional t) => Wire s () m a (Event (IO ()))
-test = createOutput . head . tail  $ fmap (\x -> (convert (fst x), snd x)) $ printList
-  where
-     createOutput :: (HasTime t s, Monad m) => (t, IO ()) -> Wire s () m a (Event (IO ()))
-     createOutput x = at (fst x) . pure (snd x)
-     convert = fromRational . toRational
+mergeTest :: (HasTime t s, Monad m, Fractional t) => Wire s () m a (Event (IO ()))
+mergeTest = (test 0) <$ (test 1)
 
 generateWorld :: (HasTime t s, Monad m) => Wire s () m a World
 generateWorld = fmap (getWorld) myTime

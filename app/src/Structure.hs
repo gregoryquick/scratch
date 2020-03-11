@@ -50,8 +50,12 @@ objectMass = 1.0
 --     loop = (0.0, qworld) : (fmap (findChange . snd) loop)
 
 findWorldUpdateInfo :: World -> [(Double, World)]
-findWorldUpdateInfo world = fmap (\x -> (abs $ fst x, inject $ snd x)) loop
+findWorldUpdateInfo world = zip totalTList worldsList
   where
+    totalTList = fmap (foldl1 (+)) $ fmap (\x -> take x deltaTList) [1..]
+    deltaTList = fmap (fst) deltaTWorldList
+    worldsList = fmap (snd) deltaTWorldList
+    deltaTWorldList = fmap (\x -> (abs $ fst x, inject $ snd x)) loop
     qworld = quantize world
     loop = (0.0, qworld) : (fmap (findChange . snd) loop)
 
