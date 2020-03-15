@@ -28,31 +28,14 @@ quantize world = QWorld (floor((getX(world)/getX(quantums)))) (floor((getP(world
 inject :: QWorld -> World
 inject qworld = World (fromIntegral(getXq(qworld))*getX(quantums)) (fromIntegral(getPq(qworld))*getP(quantums))
 
---Function to get quantized version of world at a given time.
-getQWorld :: Double -> QWorld
-getQWorld = \x -> (quantize . getWorld) x
-
---Function to get the world at a given time.
-getWorld :: Double -> World
-getWorld t = World ((1/2)*cos((1/20)*t*2*pi)) (0.0)
-
-testFunction = \t -> inject $ quantize $ getWorld t
-
 --This in general, with curl and divergence will have a different type signature, but here where there is just time
 --derivitive and no spacial dependence I can be lazy and fake it should, should do it properly at some point
 springConstant = (pi^2)/100
 objectMass = 1.0
 
--- qfindWUI :: World -> [QWorld]
--- qfindWUI world = fmap (\x -> snd x) loop
---   where
---     qworld = quantize world
---     loop = (0.0, qworld) : (fmap (findChange . snd) loop)
-
 findWorldUpdateInfo :: World -> [(Double, World)]
 findWorldUpdateInfo world = zip (tail deltaTList) worldsList
   where
-    -- totalTList = fmap (foldl1 (+)) $ fmap (\x -> take x deltaTList) [1..]
     deltaTList = fmap (fst) deltaTWorldList
     worldsList = fmap (snd) deltaTWorldList
     deltaTWorldList = fmap (\x -> (abs $ fst x, inject $ snd x)) loop
@@ -98,4 +81,3 @@ changeQ' a b c = helper $ changeQ a b c
   where
     helper Nothing = a
     helper (Just x) = x
---TODO Make it so that getWorld is deqantization of getQWorld instead of getQWorld being quantization of getWorld
