@@ -14,32 +14,30 @@ import Structure
 import Rendering
 import Rasterizer
 
+import Data.List
+
 param = Paramaters 1000 500
 
 main = do
+  -- print $ take 18 $ worlds startingWorld
   run clockSession_ eventStream
-
-myTime :: (HasTime t s, Monad m) => Wire s e m a Double
-myTime = integral 0 . pure 1
 
 startingWorld = World (0.5) (0.0)
 
 printList :: [(Double, IO ())]
-printList = fmap (\x -> (fst x,sketchWith param (snd x))) $ findWorldUpdateInfo startingWorld
+printList = fmap (\x -> (fst x, print (snd x))) $ worlds startingWorld
 
 
 eventStream :: (HasTime t s, Monad m, Fractional t, Show t) => Wire s e m a (Event (IO ()))
-eventStream = createEvents $ fmap (\x -> (convert $ fst x,snd x) $ printList
+eventStream = createEvents $ fmap (\x -> (convert $ fst x, snd x)) printList
   where
-     createOutput :: (HasTime t s, Monad m) => (t, IO ()) -> Wire s e m a (Event (IO ()))
-     createOutput x = at (fst x) . pure (snd x)
-     convert = fromRational . toRational
+    convert = fromRational . toRational
 
 
 createEvents :: (HasTime t s) => [(t,b)] -> Wire s e m a (Event b)
 createEvents [] = never
 createEvents (x:xs) = mkSFN $ \_ -> (Event (snd x), loop (fst x) xs)
-    where
+   where
     loop _ [] = never
     loop 0 xs = loop (fst x) xs
     loop t' xs0@(x:xs) =

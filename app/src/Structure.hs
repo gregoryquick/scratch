@@ -3,23 +3,38 @@ module Structure where
 
 import Data.List
 import Data.Ord
+import Data.Semigroup
 
 --Continous world structure
 data World = World Double Double deriving Show
+instance Semigroup World where
+  (<>) (World x0 p0) (World x1 p1) = World (x0+x1) (p0+p1)
 getX :: World -> Double
 getX (World x _) = x
+setX :: World -> Double -> World
+setX (World _ p) x = World x p
 getP :: World -> Double
 getP (World _ p) = p
-
+setP :: World -> Double -> World
+setP (World x _) p = World x p
+multiply :: Double -> World -> World
+multiply s (World x p) = World (s*x) (s*p)
 -- Quantized state version of the world
 data QWorld = QWorld Int Int deriving Show
+instance Semigroup QWorld where
+  (<>) (QWorld x0 p0) (QWorld x1 p1) = QWorld (x0+x1) (p0+p1)
 getXq :: QWorld -> Int
 getXq (QWorld x _) = x
+setXq :: QWorld -> Int -> QWorld
+setXq (QWorld _ p) x = QWorld x p
 getPq :: QWorld -> Int
 getPq (QWorld _ p) = p
+setPq :: QWorld -> Int -> QWorld
+setPq (QWorld x _) p = QWorld x p
+
 
 -- Quantization function
-quantums = World (1/10) (1/10)
+quantums = World (1/100) (1/100)
 
 quantize :: World -> QWorld
 quantize world = QWorld (floor((getX(world)/getX(quantums)))) (floor((getP(world)/getP(quantums))))
@@ -33,51 +48,55 @@ inject qworld = World (fromIntegral(getXq(qworld))*getX(quantums)) (fromIntegral
 springConstant = (pi^2)/100
 objectMass = 1.0
 
-findWorldUpdateInfo :: World -> [(Double, World)]
-findWorldUpdateInfo world = zip (tail deltaTList) worldsList
-  where
-    deltaTList = fmap (fst) deltaTWorldList
-    worldsList = fmap (snd) deltaTWorldList
-    deltaTWorldList = fmap (\x -> (abs $ fst x, inject $ snd x)) loop
-    qworld = quantize world
-    loop = (0.0, qworld) : (fmap (findChange . snd) loop)
-
 derivitive :: World -> World
 derivitive (World x p) = World (p/objectMass) (-1.0*springConstant*x)
 
-findChange :: QWorld -> (Double, QWorld)
-findChange state = (abs $ fst changeInfo, uncurry (changeQ' state) $ convertHelper $ changeInfo)
- where
-  changeInfo = findChangeTime state
+--Integrator for now asumed to be of form y = y0 + h * z
+timeStep :: Double
+timeStep = 0.5
 
-findChangeTime :: QWorld -> (Double, Int)
-findChangeTime state = (timeTillChange !! (snd minimumTime),snd minimumTime)
+getList = [getX, getP]
+setList = [setX, setP]
+
+worlds :: World -> [(Double,World)]
+worlds x0 = zip (tail timeDeltas) worldValues
   where
-    properties = [getX, getP]
-    cState = inject state
-    distance = fmap ($ quantums) properties
-    speed = fmap ($ (derivitive cState)) properties
-    timeTillChange = fmap (uncurry (/)) $ zip distance speed
-    time = fmap (abs) timeTillChange
-    minimumTime = minimumBy (comparing fst) (zip time [0..])
+    timeDeltas = fmap (fst) loop
+    worldValues = fmap (snd) loop
+    startingWorld = x0
+    loop :: [(Double,World)]
+    loop = (0.0, startingWorld) : fmap calc historisisTerms
+    historisisTerms :: [[World]]
+    historisisTerms = transpose [fmap (snd) loop]
 
-convertHelper :: (Double, Int) -> (Maybe Bool, Int)
-convertHelper x
- | fst x == 0 = (Nothing, snd x)
- | fst x > 0 = (Just True, snd x)
- | fst x < 0 = (Just False, snd x)
-
-changeQ :: QWorld -> Maybe Bool -> Int -> Maybe QWorld
-changeQ _ Nothing _ = Nothing
-changeQ (QWorld a b) (Just True) c
-  | c == 0 = Just $ QWorld (a+1) b
-  | c == 1 = Just $ QWorld a (b+1)
-changeQ (QWorld a b) (Just False) c
-  | c == 0 = Just $ QWorld (a-1) b
-  | c == 1 = Just $ QWorld a (b-1)
-
-changeQ' :: QWorld -> Maybe Bool -> Int -> QWorld
-changeQ' a b c = helper $ changeQ a b c
+calc :: [World] -> (Double, World)
+calc past = (abs timeDelta,setter x0 newData)
   where
-    helper Nothing = a
-    helper (Just x) = x
+    x0 = past !! 0
+    zTerm = zCalc past
+    -- newWorld = (<>) x0 $ multiply timeStep $ zCalc past
+    deltaInfo = findChangeInfo zTerm
+    timeDelta = fst deltaInfo
+    index = snd deltaInfo
+    getter = getList !! index
+    setter = setList !! index
+    oldData = getter x0
+    changeofData :: Double -> Double
+    changeofData t
+      | t >= 0 = getter quantums
+      | otherwise = (-1.0) * getter quantums
+    newData = oldData + (changeofData timeDelta)
+
+
+zCalc :: [World] -> World
+zCalc past = x0'
+  where
+    x0 = past !! 0
+    x0' = derivitive x0
+
+findChangeInfo :: World -> (Double,Int)
+findChangeInfo zTerm = minimumBy (comparing (abs . fst)) (zip timeList [0..])
+  where
+    derivitiveList = fmap ($ zTerm) getList
+    quantumsList = fmap ($ quantums) getList
+    timeList = fmap (uncurry (/)) $ zip quantumsList derivitiveList
