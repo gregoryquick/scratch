@@ -19,19 +19,26 @@ import Data.List
 param = Paramaters 1000 500
 
 main = do
-  -- print $ take 18 $ worlds startingWorld
-  run clockSession_ eventStream
+  testWire clockSession_ worldStream
+  -- run clockSession_ eventStream
 
 startingWorld = World (0.5) (0.0)
 
-printList :: [(Double, IO ())]
-printList = fmap (\x -> (fst x, print (snd x))) $ worlds startingWorld
+convertList :: [(Double,World)] -> [(Double, IO ())]
+convertList myList = fmap (\x -> (fst x, print (snd x))) myList
 
+worldStream :: (HasTime t s, Monad m, Fractional t) => Wire s () m a (World)
+worldStream = asSoonAs . eventStream
 
-eventStream :: (HasTime t s, Monad m, Fractional t, Show t) => Wire s e m a (Event (IO ()))
-eventStream = createEvents $ fmap (\x -> (convert $ fst x, snd x)) printList
+eventStream :: (HasTime t s, Monad m, Fractional t) => Wire s e m a (Event (World))
+eventStream = createEvents $ fmap (\x -> (convert $ fst x, snd x)) $ worlds startingWorld
   where
     convert = fromRational . toRational
+
+-- eventStream :: (HasTime t s, Monad m, Fractional t) => Wire s e m a (Event (World))
+-- eventStream = createEvents $ fmap (\x -> (convert $ fst x, snd x)) $ convertList $ worlds startingWorld
+--   where
+--     convert = fromRational . toRational
 
 
 createEvents :: (HasTime t s) => [(t,b)] -> Wire s e m a (Event b)

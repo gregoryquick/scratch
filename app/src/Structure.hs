@@ -34,7 +34,7 @@ setPq (QWorld x _) p = QWorld x p
 
 
 -- Quantization function
-quantums = World (1/100) (1/100)
+quantums = World (1/10) (1/10)
 
 quantize :: World -> QWorld
 quantize world = QWorld (floor((getX(world)/getX(quantums)))) (floor((getP(world)/getP(quantums))))
@@ -45,11 +45,19 @@ inject qworld = World (fromIntegral(getXq(qworld))*getX(quantums)) (fromIntegral
 
 --This in general, with curl and divergence will have a different type signature, but here where there is just time
 --derivitive and no spacial dependence I can be lazy and fake it should, should do it properly at some point
-springConstant = (pi^2)/100
+
+-- Hookian spring differential equation
+springConstant = -(pi^2)/100
 objectMass = 1.0
 
 derivitive :: World -> World
-derivitive (World x p) = World (p/objectMass) (-1.0*springConstant*x)
+derivitive (World x p) = World (p/objectMass) (springConstant*x)
+
+-- Simple pendulum differential equation
+-- g = -9.8
+-- l = 1.0
+-- derivitive :: World -> World
+-- derivitive (World x p) = World (p) ((g/l)*sin((pi/180)*x))
 
 --Integrator for now asumed to be of form y = y0 + h * z
 timeStep :: Double
@@ -58,41 +66,54 @@ timeStep = 0.5
 getList = [getX, getP]
 setList = [setX, setP]
 
+nodes :: Int
+nodes = 1
+
 worlds :: World -> [(Double,World)]
-worlds x0 = zip (tail timeDeltas) worldValues
+worlds x0 = zip (drop 1 timeDeltas) worldValues
   where
     timeDeltas = fmap (fst) loop
     worldValues = fmap (snd) loop
     startingWorld = x0
     loop :: [(Double,World)]
     loop = (0.0, startingWorld) : fmap calc historisisTerms
-    historisisTerms :: [[World]]
-    historisisTerms = transpose [fmap (snd) loop]
+    historisisTerms :: [[(Double,World)]]
+    historisisTerms = transpose $ reverse $ take nodes $ iterate (tail) loop
 
-calc :: [World] -> (Double, World)
-calc past = (abs timeDelta,setter x0 newData)
+calc :: [(Double, World)] -> (Double, World)
+calc past = (abs timeDelta,setter (snd x0) newData)
   where
     x0 = past !! 0
     zTerm = zCalc past
-    -- newWorld = (<>) x0 $ multiply timeStep $ zCalc past
     deltaInfo = findChangeInfo zTerm
     timeDelta = fst deltaInfo
+
     index = snd deltaInfo
     getter = getList !! index
     setter = setList !! index
-    oldData = getter x0
+
+    oldData = getter (snd x0)
     changeofData :: Double -> Double
     changeofData t
       | t >= 0 = getter quantums
       | otherwise = (-1.0) * getter quantums
     newData = oldData + (changeofData timeDelta)
 
-
-zCalc :: [World] -> World
-zCalc past = x0'
+dynamicNodeZCalc :: Int -> [(Double,World)] -> World
+dynamicNodeZCalc 1 past = snd x0'
   where
     x0 = past !! 0
-    x0' = derivitive x0
+    x0' = (fst x0,derivitive $ snd x0)
+dynamicNodeZCalc 2 past = snd x0'
+  where
+    x0 = past !! 0
+    x1 = past !! 1
+    x0' = (fst x0,derivitive $ snd x0)
+    x1' = (fst x1,derivitive $ snd x1)
+
+zCalc :: [(Double,World)] -> World
+zCalc past = dynamicNodeZCalc 1 past
+
 
 findChangeInfo :: World -> (Double,Int)
 findChangeInfo zTerm = minimumBy (comparing (abs . fst)) (zip timeList [0..])
