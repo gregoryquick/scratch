@@ -4,17 +4,16 @@ import Graphics.Rendering.Cairo
 import Control.Monad.Reader
 import Control.Wire
 import Data.Time
-import FRP.Netwire
 import Prelude hiding ((.), id, until)
 import Control.Wire.Unsafe.Event
 import Control.Monad.IO.Class
 import Data.Fixed
+import Data.List
 
 import Structure
 import Rendering
 import Rasterizer
 
-import Data.List
 
 param = Paramaters 1000 500
 

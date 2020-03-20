@@ -34,7 +34,7 @@ setPq (QWorld x _) p = QWorld x p
 
 
 -- Quantization function
-quantums = World (1/10) (1/10)
+quantums = World (1/100) (1/100)
 
 quantize :: World -> QWorld
 quantize world = QWorld (floor((getX(world)/getX(quantums)))) (floor((getP(world)/getP(quantums))))
@@ -49,6 +49,13 @@ inject qworld = World (fromIntegral(getXq(qworld))*getX(quantums)) (fromIntegral
 -- Hookian spring differential equation
 springConstant = -(pi^2)/100
 objectMass = 1.0
+
+--Conversion connstant in meters^-1 to turn this into a string harmonics proplem, along with it's aplications
+-- c = 1.0
+--
+-- unitMass = c*objectMass
+-- tension = c*springConstant
+
 
 derivitive :: World -> World
 derivitive (World x p) = World (p/objectMass) (springConstant*x)
@@ -67,7 +74,7 @@ getList = [getX, getP]
 setList = [setX, setP]
 
 nodes :: Int
-nodes = 1
+nodes = 2
 
 worlds :: World -> [(Double,World)]
 worlds x0 = zip (drop 1 timeDeltas) worldValues
@@ -76,15 +83,15 @@ worlds x0 = zip (drop 1 timeDeltas) worldValues
     worldValues = fmap (snd) loop
     startingWorld = x0
     loop :: [(Double,World)]
-    loop = (0.0, startingWorld) : fmap calc historisisTerms
+    loop = (0.0, startingWorld) : calc 1 [(0.0, startingWorld)] : fmap (calc 2) historisisTerms
     historisisTerms :: [[(Double,World)]]
     historisisTerms = transpose $ reverse $ take nodes $ iterate (tail) loop
 
-calc :: [(Double, World)] -> (Double, World)
-calc past = (abs timeDelta,setter (snd x0) newData)
+calc :: Int -> [(Double, World)] -> (Double, World)
+calc nodeAmount past = (abs timeDelta,setter (snd x0) newData)
   where
     x0 = past !! 0
-    zTerm = zCalc past
+    zTerm = dynamicNodeZCalc nodeAmount past
     deltaInfo = findChangeInfo zTerm
     timeDelta = fst deltaInfo
 
@@ -104,16 +111,12 @@ dynamicNodeZCalc 1 past = snd x0'
   where
     x0 = past !! 0
     x0' = (fst x0,derivitive $ snd x0)
-dynamicNodeZCalc 2 past = snd x0'
+dynamicNodeZCalc 2 past = (multiply (3/2) x0') <> (multiply (-1/2) x1')
   where
     x0 = past !! 0
     x1 = past !! 1
-    x0' = (fst x0,derivitive $ snd x0)
-    x1' = (fst x1,derivitive $ snd x1)
-
-zCalc :: [(Double,World)] -> World
-zCalc past = dynamicNodeZCalc 1 past
-
+    x0' = derivitive $ snd x0
+    x1' = derivitive $ snd x1
 
 findChangeInfo :: World -> (Double,Int)
 findChangeInfo zTerm = minimumBy (comparing (abs . fst)) (zip timeList [0..])
