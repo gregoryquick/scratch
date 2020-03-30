@@ -22,4 +22,5 @@ executable app
     cairo,
     mtl,
     netwire,
-    time
+    time,
+    vector-space

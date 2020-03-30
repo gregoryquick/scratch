@@ -13,15 +13,18 @@ import Data.List
 import Structure
 import Rendering
 import Rasterizer
+import Data.VectorSpace
 
 
 param = Paramaters 1000 500
 
 main = do
+  print $ take 10 $ eulerMethod startingWorld
+  createNewBlank param
   run clockSession_ eventStream
 
 convertList :: [(Double,World)] -> [(Double, IO ())]
-convertList myList = fmap (\x -> (fst x, return ())) myList
+convertList myList = fmap (\x -> (fst x,(>>) (print x) $ sketchWith param $ snd x)) myList
 
 worldStream :: (HasTime t s, Monad m, Fractional t) => Wire s () m a (IO ())
 worldStream = asSoonAs . eventStream

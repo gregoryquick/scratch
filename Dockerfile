@@ -13,6 +13,7 @@ RUN cabal install --global happy
 RUN cabal install --global gtk2hs-buildtools-0.13.5.1
 RUN cabal install --global cairo
 RUN cabal install --global netwire
+RUN cabal install --global vector-space
 ARG CACHEBUST=1 
 COPY . .
 WORKDIR app

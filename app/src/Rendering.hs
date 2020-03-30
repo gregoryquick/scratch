@@ -22,13 +22,27 @@ createImageSurfaceFromParam (Paramaters h v) = createImageSurface FormatARGB32 h
 
 type Generate a = Reader Paramaters a
 
+blankScreen :: Generate (Render ())
+blankScreen = do
+  (Paramaters w h) <- ask
+  return $ do
+    setSourceRGBA 0 0 0 1
+    rectangle 0 0 (fromIntegral w) (fromIntegral h)
+    fill
+
+createNewBlank :: Paramaters -> IO ()
+createNewBlank param  = do
+  surface <- createImageSurfaceFromParam param
+  renderWith surface $ runReader (blankScreen) param
+  surfaceWriteToPNG surface $ (++) "/data/" $ "out" ++ ".png"
+
 getAspectRatio :: Int -> Int -> Double
 getAspectRatio h v = (fromIntegral h) / (fromIntegral v)
 
--- inCircle :: World -> (Double, Double) -> RGBAColor
--- inCircle world (x,y)
---   | ((x-getX(world))^2)+((y-0)^2) <= (1/8)^2 = RGBAColor 1 1 1 1
---   | otherwise = RGBAColor 0 0 0 1
+inCircle :: World -> (Double, Double) -> RGBAColor
+inCircle (World x0 y0) (x,y)
+  | ((x-x0)^2)+((y-y0)^2) <= (1/24)^2 = RGBAColor 1 0 0 1
+  | otherwise = RGBAColor 0 0 0 0
 
 setColour :: RGBAColor -> Render ()
 setColour (RGBAColor r g b a) = setSourceRGBA r g b a
