@@ -19,7 +19,6 @@ import Data.VectorSpace
 param = Paramaters 1000 500
 
 main = do
-  print $ take 10 $ eulerMethod startingWorld
   createNewBlank param
   run clockSession_ eventStream
 

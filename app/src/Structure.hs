@@ -73,18 +73,35 @@ jacobianAtPoint (World x p) (World xVelIn pVelIn) = World ((0.0)*xVelIn + (1/obj
 jacobian :: World -> World
 jacobian = jacobianAtPoint (World 0.0 0.0)
 
---Simple euler method for now
-h = 1.0;
-eulerMethod :: World -> [World]
-eulerMethod w = loop
+--Linear multistep
+nodes :: Int
+nodes = 2
+h :: Double
+h = 1.27
+
+integrator :: World -> [World]
+integrator w = loop
   where
     loop :: [World]
-    loop = w : fmap computeNext loop
-    computeNext :: World -> World
-    computeNext world = (^+^) world $ (*^) h $ jacobian world
+    loop = w : ramp w : fmap computeNext historisisTerms
+
+    ramp :: World -> World
+    ramp world = (^+^) world $ (*^) h $ jacobian world
+
+    historisisTerms :: [[World]]
+    historisisTerms = transpose $ reverse $ take nodes $ iterate (tail) loop
+
+    computeNext :: [(World)] -> World
+    computeNext past = (^+^) x0 $ d0 ^+^ d1
+      where
+        d0 = (*^) ((3/2)*h) $ jacobian x0
+        d1 = (*^) ((-1/2)*h) $ jacobian x1
+        x0 = past!!0
+        x1 = past!!1
+
 --So that compile does not break with main.hs
 worlds :: World -> [(Double,World)]
-worlds w = fmap (\x -> (0.0000001,x)) $ eulerMethod w
+worlds w = fmap (\x -> (0.0000001,x)) $ integrator w
 
 --Another model for testing
 -- --World structure

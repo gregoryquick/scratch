@@ -40,5 +40,5 @@ sketchWith :: Paramaters -> World -> IO ()
 sketchWith param world = do
   -- surface <- createImageSurfaceFromParam param
   surface <- imageSurfaceCreateFromPNG $ (++) "/data/" $ "out" ++ ".png"
-  renderWith surface $ runReader (sketch world inCircle) param
+  renderWith surface $ runReader (sketch world dot) param
   surfaceWriteToPNG surface $ (++) "/data/" $ "out" ++ ".png"

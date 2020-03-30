@@ -41,8 +41,13 @@ getAspectRatio h v = (fromIntegral h) / (fromIntegral v)
 
 inCircle :: World -> (Double, Double) -> RGBAColor
 inCircle (World x0 y0) (x,y)
-  | ((x-x0)^2)+((y-y0)^2) <= (1/24)^2 = RGBAColor 1 0 0 1
+  | ((x-x0)^2)+((y-y0)^2) <= (1/64)^2 = RGBAColor 1 0 0 1
   | otherwise = RGBAColor 0 0 0 0
+
+dot :: World -> (Double, Double) -> RGBAColor
+dot (World x0 y0) (x,y) =  RGBAColor 1 0 0 $ funct $ ((x-x0)^2)+((y-y0)^2)
+  where
+    funct r = 1 - tanh((256*r)^4)
 
 setColour :: RGBAColor -> Render ()
 setColour (RGBAColor r g b a) = setSourceRGBA r g b a
