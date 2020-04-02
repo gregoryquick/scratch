@@ -19,8 +19,11 @@ instance AdditiveGroup World where
 instance VectorSpace World where
   type Scalar World = Double
   (*^) s (World a b) = World (s*a) (s*b)
+instance InnerSpace World where
+  (<.>) (World a0 b0) (World a1 b1) = (a0*a1)+(b0*b1)
+--Probably should look at chaning this to the Affine space type
 
---A type to avoid confusing World and the timer derivive of world
+--A type to avoid confusing World and the derivives of world
 type World' = World
 
 -- Hookian spring constannt
@@ -43,14 +46,17 @@ errorFunction time testWorld = (actualValue time) ^+^ (negateV testWorld)
 -- x' = p/m
 -- p' = -kx
 -- aka dX/dt = f(X)
+timeDifferential :: World -> World'
+timeDifferential (World x p) = World (p/objectMass) (-1.0*springConstant*x)
 
 --So jacobian df/dX is
 -- 0.0 , 1/m
 -- -k  , 0.0
 --aka
 --[d_x(X') , d_p(X')]
-jacobianAtPoint :: World -> World -> World
-jacobianAtPoint (World x p) (World xVelIn pVelIn) = World ((0.0)*xVelIn + (1/objectMass)*pVelIn) ((-1.0*springConstant)*xVelIn + (0.0)*pVelIn)
+jacobianAtPoint :: World -> World' -> World'
+jacobianAtPoint (World x p) (World xVelIn pVelIn) = World (pVelIn/objectMass) (-1.0*springConstant*xVelIn)
+--This only looks like the system equation becouse the system equation is linear.
 
 --We know that the given jacobian J_x0 of f about stable point x0 means that the system of equations
 --is well aproximated by X' = J_x0(X) about x0
@@ -69,39 +75,54 @@ jacobianAtPoint (World x p) (World xVelIn pVelIn) = World ((0.0)*xVelIn + (1/obj
 
 --Solver code
 
---We have constant jacobian so we will only needed
-jacobian :: World -> World
-jacobian = jacobianAtPoint (World 0.0 0.0)
-
 --Linear multistep
-nodes :: Int
-nodes = 2
-h :: Double
-h = 1.27
+
+-- nodes :: Int
+-- nodes = 2
+-- h :: Double
+-- h = 0.1
+--
+-- integrator :: World -> [World]
+-- integrator w = loop
+--   where
+--     loop :: [World]
+--     loop = w : ramp w : fmap computeNext historisisTerms
+--
+--     ramp :: World -> World
+--     ramp world = (^+^) world $ (*^) h $ timeDifferential world
+--
+--     historisisTerms :: [[World]]
+--     historisisTerms = transpose $ reverse $ take nodes $ iterate (tail) loop
+--
+--     computeNext :: [(World)] -> World
+--     computeNext past = (^+^) x0 $ d0 ^+^ d1
+--       where
+--         d0 = (*^) ((3/2)*h) $ timeDifferential x0
+--         d1 = (*^) ((-1/2)*h) $ timeDifferential x1
+--         x0 = past!!0
+--         x1 = past!!1
+phaseDistance :: Double
+phaseDistance = 0.01
 
 integrator :: World -> [World]
 integrator w = loop
   where
     loop :: [World]
-    loop = w : ramp w : fmap computeNext historisisTerms
+    loop = w : fmap computeNext loop
 
-    ramp :: World -> World
-    ramp world = (^+^) world $ (*^) h $ jacobian world
-
-    historisisTerms :: [[World]]
-    historisisTerms = transpose $ reverse $ take nodes $ iterate (tail) loop
-
-    computeNext :: [(World)] -> World
-    computeNext past = (^+^) x0 $ d0 ^+^ d1
+    computeNext :: World -> World
+    computeNext oldWorld = (^+^) oldWorld $ deltaVector
       where
-        d0 = (*^) ((3/2)*h) $ jacobian x0
-        d1 = (*^) ((-1/2)*h) $ jacobian x1
-        x0 = past!!0
-        x1 = past!!1
+        diffVector = timeDifferential oldWorld
+        normVector = normalized diffVector
+        deltaVector = phaseDistance *^ normVector
+        -- deltaMag = (deltaVector <.> deltaVector)
+        -- h = phaseDistance/deltaMag
 
 --So that compile does not break with main.hs
 worlds :: World -> [(Double,World)]
-worlds w = fmap (\x -> (0.0000001,x)) $ integrator w
+worlds w = fmap (\x -> (0.0000000001,x)) $ integrator w
+-- worlds w = integrator w
 
 --Another model for testing
 -- --World structure

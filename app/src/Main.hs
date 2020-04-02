@@ -19,6 +19,8 @@ import Data.VectorSpace
 param = Paramaters 1000 500
 
 main = do
+  -- print $ take 50 $ worlds startingWorld
+  -- print $ timeDifferential startingWorld
   createNewBlank param
   run clockSession_ eventStream
 
