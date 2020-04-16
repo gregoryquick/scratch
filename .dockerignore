@@ -1,0 +1,13 @@
+# docker
+.dockerignore
+Dockerfile
+
+# git
+.git/
+.gitignore
+
+# documentation... lol
+README.md
+
+# execute file
+run.command
