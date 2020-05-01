@@ -5,10 +5,12 @@ import Data.List
 import Data.Ord
 import Data.Semigroup
 import Data.VectorSpace
+import Data.Fixed
 --Model code
 
 -- World structure
 --World the currennt possition and momentum
+
 data World = World Double Double
 instance Show World where
   show (World a b) = "World (" ++ (show a) ++ ") (" ++ (show b) ++ ")"
@@ -75,51 +77,53 @@ jacobianAtPoint (World x p) (World xVelIn pVelIn) = World (pVelIn/objectMass) (-
 
 --Solver code
 
---Linear multistep
+-- Linear multistep
 
--- nodes :: Int
--- nodes = 2
--- h :: Double
--- h = 0.1
---
--- integrator :: World -> [World]
--- integrator w = loop
---   where
---     loop :: [World]
---     loop = w : ramp w : fmap computeNext historisisTerms
---
---     ramp :: World -> World
---     ramp world = (^+^) world $ (*^) h $ timeDifferential world
---
---     historisisTerms :: [[World]]
---     historisisTerms = transpose $ reverse $ take nodes $ iterate (tail) loop
---
---     computeNext :: [(World)] -> World
---     computeNext past = (^+^) x0 $ d0 ^+^ d1
---       where
---         d0 = (*^) ((3/2)*h) $ timeDifferential x0
---         d1 = (*^) ((-1/2)*h) $ timeDifferential x1
---         x0 = past!!0
---         x1 = past!!1
-phaseDistance :: Double
-phaseDistance = 0.01
+nodes :: Int
+nodes = 2
+h :: Double
+h = 0.1
 
 integrator :: World -> [World]
 integrator w = loop
   where
     loop :: [World]
-    loop = w : fmap computeNext loop
+    loop = w : ramp w : fmap computeNext historisisTerms
 
-    computeNext :: World -> World
-    computeNext oldWorld = (^+^) oldWorld $ deltaVector
+    ramp :: World -> World
+    ramp world = (^+^) world $ (*^) h $ timeDifferential world
+
+    historisisTerms :: [[World]]
+    historisisTerms = transpose $ reverse $ take nodes $ iterate (tail) loop
+
+    computeNext :: [(World)] -> World
+    computeNext past = (^+^) x0 $ d0 ^+^ d1
       where
-        diffVector = timeDifferential oldWorld
-        normVector = normalized diffVector
-        deltaVector = phaseDistance *^ normVector
-        -- deltaMag = (deltaVector <.> deltaVector)
-        -- h = phaseDistance/deltaMag
+        d0 = (*^) ((3/2)*h) $ timeDifferential x0
+        d1 = (*^) ((-1/2)*h) $ timeDifferential x1
+        x0 = past!!0
+        x1 = past!!1
 
---So that compile does not break with main.hs
+-- Fixed phase distance
+
+-- phaseDistance :: Double
+-- phaseDistance = 0.01
+--
+-- integrator :: World -> [World]
+-- integrator w = loop
+--   where
+--     loop :: [World]
+--     loop = w : fmap computeNext loop
+--
+--     computeNext :: World -> World
+--     computeNext oldWorld = (^+^) oldWorld $ deltaVector
+--       where
+--         diffVector = timeDifferential oldWorld
+--         normVector = normalized diffVector
+--         deltaVector = phaseDistance *^ normVector
+--         -- deltaMag = (deltaVector <.> deltaVector)
+--         -- h = phaseDistance/deltaMag
+
 worlds :: World -> [(Double,World)]
 worlds w = fmap (\x -> (0.0000000001,x)) $ integrator w
 -- worlds w = integrator w

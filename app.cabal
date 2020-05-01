@@ -11,7 +11,7 @@ copyright:           2019 Author name here
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
-extra-source-files:  
+extra-source-files:
 
 executable app
   hs-source-dirs:      src

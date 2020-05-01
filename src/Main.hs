@@ -19,16 +19,12 @@ import Data.VectorSpace
 param = Paramaters 1000 500
 
 main = do
-  -- print $ take 50 $ worlds startingWorld
-  -- print $ timeDifferential startingWorld
   createNewBlank param
   run clockSession_ eventStream
 
 convertList :: [(Double,World)] -> [(Double, IO ())]
 convertList myList = fmap (\x -> (fst x,(>>) (print x) $ sketchWith param $ snd x)) myList
 
-worldStream :: (HasTime t s, Monad m, Fractional t) => Wire s () m a (IO ())
-worldStream = asSoonAs . eventStream
 
 eventStream :: (HasTime t s, Monad m, Fractional t) => Wire s e m a (Event (IO ()))
 eventStream = createEvents $ fmap (\x -> (convert $ fst x, snd x)) $ convertList $ worlds startingWorld
