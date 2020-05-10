@@ -7,14 +7,18 @@ RUN apt-get install -y pkg-config
 RUN apt-get install libcairo2-dev
 RUN apt-get install -y ghc ghc-prof ghc-doc
 RUN apt-get install -y cabal-install
-RUN cabal update
-RUN cabal install --global alex
-RUN cabal install --global happy
-RUN cabal install --global gtk2hs-buildtools-0.13.5.1
-RUN cabal install --global cairo
-RUN cabal install --global netwire
-RUN cabal install --global vector-space 
-COPY . .
-WORKDIR app
+RUN cabal v2-update
+RUN mkdir /build 
+WORKDIR /build 
+RUN cabal v1-install alex
+RUN cabal v1-install happy
+RUN cabal v1-install gtk2hs-buildtools-0.13.5.1
+RUN cabal v1-install cairo
+RUN cabal v1-install netwire
+RUN cabal v1-install vector-space 
+COPY src .
+COPY LICENSE .
+COPY Setup.hs .
+COPY app.cabal .
 RUN cabal build
 CMD cabal run
