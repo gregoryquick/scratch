@@ -16,9 +16,9 @@ RUN cabal v1-install gtk2hs-buildtools-0.13.5.1
 RUN cabal v1-install cairo
 RUN cabal v1-install netwire
 RUN cabal v1-install vector-space 
-COPY src .
+COPY src src
 COPY LICENSE .
 COPY Setup.hs .
 COPY app.cabal .
-RUN cabal build
-CMD cabal run
+RUN cabal v1-build
+CMD cabal v1-run
